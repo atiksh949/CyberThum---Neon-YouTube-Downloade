@@ -14,6 +14,12 @@ export enum ResolutionType {
   SD = 'Standard Definition'
 }
 
+export interface VideoResolution {
+  label: string;
+  quality: string;
+  isAvailable: boolean;
+}
+
 export interface DownloadQueueItem {
   id: string;
   videoId: string;

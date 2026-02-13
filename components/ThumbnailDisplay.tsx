@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ThumbnailData, ResolutionType } from '../types';
+import { ThumbnailData, ResolutionType, VideoResolution } from '../types';
 import { checkThumbnailAvailability } from '../services/youtube';
 
 interface Props {
@@ -8,11 +8,20 @@ interface Props {
   onDownload: (res: string, url: string) => void;
 }
 
+const VIDEO_TIERS: VideoResolution[] = [
+  { label: '4K_ULTRA', quality: '2160p', isAvailable: true },
+  { label: 'FHD_EXTRACT', quality: '1080p', isAvailable: true },
+  { label: 'HD_SIGNAL', quality: '720p', isAvailable: true },
+  { label: 'SD_CORE', quality: '440p', isAvailable: true },
+  { label: 'MIN_LINK', quality: '240p', isAvailable: true },
+];
+
 export const ThumbnailDisplay: React.FC<Props> = ({ data, onDownload }) => {
   const [selectedRes, setSelectedRes] = useState<keyof Omit<ThumbnailData, 'videoId'>>('maxRes');
   const [isVerifying, setIsVerifying] = useState(true);
   const [availableRes, setAvailableRes] = useState<Record<string, boolean>>({});
   const [shareStatus, setShareStatus] = useState<'idle' | 'success'>('idle');
+  const [extractionMode, setExtractionMode] = useState(false);
 
   const resMeta = {
     maxRes: { label: ResolutionType.MAX_RES, dims: '1280 × 720', size: '~250KB' },
@@ -65,8 +74,15 @@ export const ThumbnailDisplay: React.FC<Props> = ({ data, onDownload }) => {
     }
   };
 
+  const handleVideoDownloadRequest = (quality: string) => {
+    // For full video downloads in a pure frontend environment, 
+    // we use the popular 'ss' redirect method as direct CORS bypass is not possible client-side.
+    const redirectUrl = `https://www.ssyoutube.com/watch?v=${data.videoId}`;
+    window.open(redirectUrl, '_blank');
+  };
+
   return (
-    <div className="mt-12 animate-in fade-in zoom-in-95 duration-500 w-full max-w-5xl relative z-10">
+    <div className="mt-12 animate-in fade-in zoom-in-95 duration-500 w-full max-w-5xl relative z-10 space-y-8">
       <div className="relative group">
         <div className="absolute -top-2 -left-2 w-8 h-8 border-t-2 border-l-2 border-red-500 z-20"></div>
         <div className="absolute -top-2 -right-2 w-8 h-8 border-t-2 border-right-2 border-red-500 z-20"></div>
@@ -144,7 +160,6 @@ export const ThumbnailDisplay: React.FC<Props> = ({ data, onDownload }) => {
                           </div>
                         </button>
                         
-                        {/* Tooltip */}
                         {isAvailable && (
                           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 hidden md:block">
                             <div className="bg-zinc-900 border border-red-900/50 p-2 rounded shadow-2xl min-w-[120px]">
@@ -174,6 +189,42 @@ export const ThumbnailDisplay: React.FC<Props> = ({ data, onDownload }) => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* New Video Binary Extraction Section */}
+      <div className="relative group">
+        <div className="bg-zinc-950/80 border border-zinc-900 p-6 rounded-sm backdrop-blur-lg">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="font-orbitron text-sm text-red-500 tracking-[0.4em] uppercase flex items-center gap-3">
+              <span className="w-2 h-2 bg-red-600 animate-pulse"></span>
+              Video_Binary_Extraction
+            </h4>
+            <div className="px-2 py-0.5 border border-red-900 text-[8px] font-orbitron text-red-900 uppercase">
+              Encrypted_Tunnel_Active
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {VIDEO_TIERS.map((tier) => (
+              <button
+                key={tier.quality}
+                onClick={() => handleVideoDownloadRequest(tier.quality)}
+                className="group/video relative bg-black/40 border border-zinc-800 hover:border-red-600 p-4 transition-all hover:bg-red-950/10 flex flex-col items-center gap-2"
+              >
+                <div className="text-xs font-orbitron text-zinc-300 group-hover/video:text-white transition-colors">{tier.quality}</div>
+                <div className="text-[9px] font-rajdhani text-zinc-600 group-hover/video:text-red-500 transition-colors uppercase tracking-widest">{tier.label}</div>
+                <div className="absolute top-0 right-0 p-1 opacity-0 group-hover/video:opacity-100 transition-opacity">
+                  <svg className="w-2 h-2 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L4 10H8V22H16V10H20L12 2Z" />
+                  </svg>
+                </div>
+              </button>
+            ))}
+          </div>
+          <p className="mt-6 text-[9px] font-rajdhani text-zinc-600 uppercase tracking-widest text-center border-t border-zinc-900 pt-4">
+            Note: Video extraction requires external buffer processing. Links are generated for direct deployment.
+          </p>
         </div>
       </div>
     </div>
